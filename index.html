@@ -1,1 +1,437 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calm Task Organizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Soft blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column; /* Stack inputs vertically for better mobile layout */
+            gap: 0.75rem;
+        }
+        .task-input-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .task-input, .deadline-input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e1; /* Light gray border */
+            border-radius: 0.75rem; /* Rounded input */
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .task-input:focus, .deadline-input:focus {
+            border-color: #6366f1; /* Indigo focus */
+        }
+        .add-button {
+            background-color: #6366f1; /* Indigo */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+        .add-button:hover {
+            background-color: #4f46e5; /* Darker indigo on hover */
+            transform: translateY(-1px);
+        }
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .task-item {
+            background-color: #f8fafc; /* Lighter background for tasks */
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column; /* Stack text and deadline */
+            align-items: flex-start; /* Align text to start */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s;
+            position: relative; /* For action buttons */
+        }
+        .task-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .task-item.completed {
+            background-color: #e0e7ff; /* Lighter blue for completed tasks */
+            text-decoration: line-through;
+            color: #6b7280; /* Muted text for completed */
+        }
+        .task-text {
+            flex-grow: 1;
+            font-size: 1rem;
+            color: #334155; /* Darker text for tasks */
+            margin-right: 10px; /* Space between text and actions */
+        }
+        .task-item.completed .task-text {
+            color: #6b7280;
+        }
+        .task-deadline {
+            font-size: 0.85rem;
+            color: #6b7280; /* Muted color for deadline */
+            margin-top: 0.25rem;
+            padding-left: 0.25rem; /* Indent slightly */
+        }
+        .task-actions {
+            display: flex;
+            gap: 0.5rem;
+            position: absolute; /* Position actions absolutely */
+            top: 1rem;
+            right: 1rem;
+        }
+        .action-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #6366f1; /* Indigo for icons */
+            transition: color 0.2s, transform 0.1s;
+        }
+        .action-button:hover {
+            color: #4f46e5;
+            transform: scale(1.1);
+        }
+        .action-button.delete {
+            color: #ef4444; /* Red for delete */
+        }
+        .action-button.delete:hover {
+            color: #dc2626;
+        }
+        .message-box {
+            background-color: #d1fae5; /* Light green for success/encouragement */
+            color: #065f46; /* Dark green text */
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .user-id-display {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 1rem;
+            word-break: break-all; /* Ensure long IDs wrap */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .task-input-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .add-button {
+                width: 100%;
+            }
+            .task-actions {
+                position: static; /* Revert to static for smaller screens */
+                margin-top: 0.5rem;
+                align-self: flex-end; /* Align actions to the right */
+            }
+            .task-item {
+                align-items: stretch; /* Stretch items to fill width */
+            }
+            .task-content {
+                flex-direction: column; /* Stack text and actions vertically */
+                align-items: flex-start;
+            }
+            .task-text {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800">Your Calm Tasks</h1>
+        <p class="user-id-display" id="userIdDisplay">Local Mode - Loading...</p>
+
+        <div class="input-group">
+            <div class="task-input-row">
+                <input type="text" id="newTaskInput" class="task-input" placeholder="Add a new task...">
+                <input type="datetime-local" id="deadlineInput" class="deadline-input" title="Set a deadline (optional)">
+            </div>
+            <button id="addTaskButton" class="add-button">Add Task</button>
+        </div>
+
+        <div id="loadingIndicator" class="loading-spinner hidden"></div>
+        <div id="messageBox" class="message-box hidden"></div>
+        <div id="taskList" class="task-list">
+            <!-- Tasks will be rendered here -->
+        </div>
+        <div id="emptyStateMessage" class="message-box hidden">
+            All clear! Take a moment to relax.
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let userId = null;
+        let isAuthReady = false;
+
+        const newTaskInput = document.getElementById('newTaskInput');
+        const deadlineInput = document.getElementById('deadlineInput');
+        const addTaskButton = document.getElementById('addTaskButton');
+        const taskList = document.getElementById('taskList');
+        const messageBox = document.getElementById('messageBox');
+        const emptyStateMessage = document.getElementById('emptyStateMessage');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        const encouragingMessages = [
+            "Great job!",
+            "You did it!",
+            "One step closer!",
+            "Fantastic work!",
+            "Task conquered!"
+        ];
+
+        // Function to show a temporary message
+        function showMessage(msg, type = 'success') {
+            messageBox.textContent = msg;
+            messageBox.className = `message-box ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+        // Function to format deadline for display
+        function formatDeadline(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            // Format as "MMM DD, YYYY HH:MM AM/PM"
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleString(undefined, options);
+        }
+
+        // Function to render tasks
+        function renderTasks(tasks) {
+            taskList.innerHTML = ''; // Clear existing tasks
+            if (tasks.length === 0) {
+                emptyStateMessage.classList.remove('hidden');
+            } else {
+                emptyStateMessage.classList.add('hidden');
+                tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+                    taskItem.dataset.id = task.id;
+
+                    const taskContent = document.createElement('div');
+                    taskContent.className = 'task-content';
+
+                    const taskText = document.createElement('span');
+                    taskText.className = 'task-text';
+                    taskText.textContent = task.text;
+                    taskContent.appendChild(taskText);
+
+                    const taskActions = document.createElement('div');
+                    taskActions.className = 'task-actions';
+
+                    const completeButton = document.createElement('button');
+                    completeButton.className = 'action-button complete-task';
+                    completeButton.innerHTML = task.completed ? '&#10003;' : '&#9744;'; // Checkmark or empty box
+                    completeButton.title = task.completed ? 'Mark as Incomplete' : 'Mark as Complete';
+                    completeButton.addEventListener('click', () => toggleTaskCompletion(task.id, !task.completed));
+                    taskActions.appendChild(completeButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'action-button delete';
+                    deleteButton.innerHTML = '&#10006;'; // Cross icon
+                    deleteButton.title = 'Delete Task';
+                    deleteButton.addEventListener('click', () => deleteTask(task.id));
+                    taskActions.appendChild(deleteButton);
+
+                    taskItem.appendChild(taskContent); // Add task content first
+
+                    if (task.deadline) {
+                        const deadlineText = document.createElement('div');
+                        deadlineText.className = 'task-deadline';
+                        deadlineText.textContent = `Due: ${formatDeadline(task.deadline)}`;
+                        taskItem.appendChild(deadlineText);
+                    }
+
+                    taskItem.appendChild(taskActions); // Add action buttons
+                    taskList.appendChild(taskItem);
+                });
+            }
+        }
+
+        // Local storage functions
+        function getLocalTasks() {
+            const stored = localStorage.getItem('localTasks');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function saveLocalTasks(tasks) {
+            localStorage.setItem('localTasks', JSON.stringify(tasks));
+        }
+
+        // Add a new task
+        async function addTask() {
+            const taskText = newTaskInput.value.trim();
+            const deadlineValue = deadlineInput.value;
+            let deadlineTimestamp = null;
+
+            if (taskText === '') {
+                showMessage('Task cannot be empty!', 'error');
+                return;
+            }
+
+            if (deadlineValue) {
+                deadlineTimestamp = new Date(deadlineValue).getTime();
+            }
+
+            loadingIndicator.classList.remove('hidden');
+            try {
+                // Local storage mode
+                const tasks = getLocalTasks();
+                const newTask = {
+                    id: 'task-' + Date.now(),
+                    text: taskText,
+                    completed: false,
+                    createdAt: Date.now(),
+                    deadline: deadlineTimestamp
+                };
+                tasks.push(newTask);
+                saveLocalTasks(tasks);
+                renderTasks(tasks);
+                
+                newTaskInput.value = '';
+                deadlineInput.value = '';
+                showMessage('Task added!');
+            } catch (e) {
+                console.error("Error adding task: ", e);
+                showMessage('Error adding task. Please try again.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // Toggle task completion status
+        async function toggleTaskCompletion(id, completedStatus) {
+            loadingIndicator.classList.remove('hidden');
+            try {
+                // Local storage mode
+                const tasks = getLocalTasks();
+                const taskIndex = tasks.findIndex(task => task.id === id);
+                if (taskIndex !== -1) {
+                    tasks[taskIndex].completed = completedStatus;
+                    saveLocalTasks(tasks);
+                    renderTasks(tasks);
+                }
+                
+                if (completedStatus) {
+                    const randomMessage = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
+                    showMessage(randomMessage);
+                } else {
+                    showMessage('Task marked incomplete.');
+                }
+            } catch (e) {
+                console.error("Error updating task: ", e);
+                showMessage('Error updating task. Please try again.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // Delete a task
+        async function deleteTask(id) {
+            loadingIndicator.classList.remove('hidden');
+            try {
+                // Local storage mode
+                const tasks = getLocalTasks();
+                const filteredTasks = tasks.filter(task => task.id !== id);
+                saveLocalTasks(filteredTasks);
+                renderTasks(filteredTasks);
+                showMessage('Task deleted!');
+            } catch (e) {
+                console.error("Error deleting task: ", e);
+                showMessage('Error deleting task. Please try again.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // Initialize the app
+        function initializeApp() {
+            userId = 'local-user-' + Date.now();
+            userIdDisplay.textContent = `Local Mode - User ID: ${userId}`;
+            isAuthReady = true;
+            
+            // Load existing tasks
+            const tasks = getLocalTasks();
+            renderTasks(tasks);
+        }
+
+        // Event Listeners
+        window.onload = () => {
+            initializeApp();
+        };
+
+        addTaskButton.addEventListener('click', addTask);
+        newTaskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+        deadlineInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html> 
